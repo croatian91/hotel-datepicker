@@ -550,6 +550,12 @@ export default class HotelDatepicker {
 
         // Store our datepicker in a property
         this.datepicker = document.getElementById(this.getDatepickerId());
+
+        this.tooltip = document.createElement("div");
+        this.tooltip.id = this.getTooltipId();
+        this.tooltip.className = this.className + "__tooltip";
+        this.tooltip.style.display = "none";
+        document.body.appendChild(this.tooltip);
     }
 
     createDatepickerDomString() {
@@ -755,14 +761,6 @@ export default class HotelDatepicker {
         if (this.showTopbar && this.topbarPosition === "bottom") {
             html += topBarHtml;
         }
-
-        // Tooltip
-        html +=
-            '<div style="display:none" id="' +
-            this.getTooltipId() +
-            '" class="' +
-            this.className +
-            '__tooltip"></div>';
 
         html += "</div>";
 
@@ -2421,32 +2419,34 @@ export default class HotelDatepicker {
         // Show tooltip on hovering and set its position
         if (tooltip) {
             const dayBounding = day.getBoundingClientRect();
-            const datepickerBounding = this.datepicker.getBoundingClientRect();
-            let _left = dayBounding.left - datepickerBounding.left;
-            let _top = dayBounding.top - datepickerBounding.top;
-
-            _left += dayBounding.width / 2;
-
-            const tooltipContainer = document.getElementById(
-                this.getTooltipId(),
-            );
+            const tooltipContainer = this.tooltip;
             tooltipContainer.style.display = "";
             tooltipContainer.textContent = tooltip;
             const w = tooltipContainer.getBoundingClientRect().width;
             const h = tooltipContainer.getBoundingClientRect().height;
-
-            _left -= w / 2;
-            _top -= h;
-
-            setTimeout(() => {
-                tooltipContainer.style.left = _left + "px";
-                tooltipContainer.style.top = _top + "px";
-            }, 10);
-        } else {
-            const tooltipContainer = document.getElementById(
-                this.getTooltipId(),
+            const gap = 5;
+            const viewportPadding = 8;
+            let left = Math.max(
+                viewportPadding,
+                Math.min(dayBounding.left + (dayBounding.width - w) / 2, window.innerWidth - w - viewportPadding),
             );
-            tooltipContainer.style.display = "none";
+            let top = dayBounding.top - h - gap;
+            let placement = "top";
+
+            if (top < viewportPadding) {
+                top = dayBounding.bottom + gap;
+                placement = "bottom";
+            }
+
+            tooltipContainer.dataset.placement = placement;
+            tooltipContainer.style.left = left + "px";
+            tooltipContainer.style.top = top + "px";
+            tooltipContainer.style.setProperty(
+                "--tooltip-caret-left",
+                dayBounding.left + dayBounding.width / 2 - left + "px",
+            );
+        } else {
+            this.tooltip.style.display = "none";
         }
     }
 
@@ -2458,8 +2458,7 @@ export default class HotelDatepicker {
         }
 
         // Hide the tooltip
-        const tooltipContainer = document.getElementById(this.getTooltipId());
-        tooltipContainer.style.display = "none";
+        this.tooltip.style.display = "none";
     }
 
     clearSelection() {
@@ -3233,6 +3232,7 @@ export default class HotelDatepicker {
             this.removeAllBoundedListeners(this.input, "click");
             this.removeAllBoundedListeners(document, "click");
             this.removeAllBoundedListeners(this.input, "change");
+            this.tooltip.remove();
             this.datepicker.parentNode.removeChild(this.datepicker);
         }
     }

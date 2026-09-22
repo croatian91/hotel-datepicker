@@ -108,5 +108,6 @@
 }
 
 .#{$selector}__tooltip {
-    position: absolute;
+    position: fixed;
+    z-index: $tooltip__z-index;
 }
